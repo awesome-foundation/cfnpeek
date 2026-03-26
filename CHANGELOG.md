@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/awesome-foundation/cfnpeek/compare/v0.3.0...v0.3.1) (2026-03-26)
+
+
+### Bug Fixes
+
+* versioned download URLs updated by release-please ([#7](https://github.com/awesome-foundation/cfnpeek/issues/7)) ([5315983](https://github.com/awesome-foundation/cfnpeek/commit/531598359e522f3adb9060d8744b0873039aeae6))
+
 ## [0.3.0](https://github.com/awesome-foundation/cfnpeek/compare/v0.2.0...v0.3.0) (2026-03-26)
 
 
