@@ -73,6 +73,26 @@ func (f *TableFormatter) Format(w io.Writer, data *model.StackInfo) error {
 	return ew.err
 }
 
+func (f *TableFormatter) FormatEvents(w io.Writer, data *model.StackEvents) error {
+	ew := &errWriter{w: w}
+	ew.printf("Events for %s (%d)\n", data.StackName, len(data.Events))
+
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	ew2 := &errWriter{w: tw}
+	ew2.printf("TIMESTAMP\tLOGICAL ID\tSTATUS\tREASON\n")
+	for _, e := range data.Events {
+		ew2.printf("%s\t%s\t%s\t%s\n", e.Timestamp, e.LogicalID, e.Status, e.StatusReason)
+	}
+	if ew2.err != nil {
+		return ew2.err
+	}
+	if err := tw.Flush(); err != nil {
+		return err
+	}
+
+	return ew.err
+}
+
 func (f *TableFormatter) FormatList(w io.Writer, data *model.StackList) error {
 	ew := &errWriter{w: w}
 	ew.printf("Stacks (%d)\n", len(data.Stacks))

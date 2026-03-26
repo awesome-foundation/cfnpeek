@@ -48,3 +48,20 @@ type StackList struct {
 	XMLName xml.Name       `json:"-" yaml:"-" toml:"-" xml:"stacks"`
 	Stacks  []StackSummary `json:"stacks" yaml:"stacks" toml:"stacks" xml:"stack"`
 }
+
+// StackEvent holds a single CloudFormation stack event.
+type StackEvent struct {
+	Timestamp    string `json:"timestamp" yaml:"timestamp" toml:"timestamp" xml:"timestamp"`
+	LogicalID    string `json:"logical_id" yaml:"logical_id" toml:"logical_id" xml:"logical_id"`
+	Status       string `json:"status" yaml:"status" toml:"status" xml:"status"`
+	StatusReason string `json:"status_reason,omitempty" yaml:"status_reason,omitempty" toml:"status_reason,omitempty" xml:"status_reason,omitempty"`
+	ResourceType string `json:"resource_type" yaml:"resource_type" toml:"resource_type" xml:"resource_type"`
+	PhysicalID   string `json:"physical_id,omitempty" yaml:"physical_id,omitempty" toml:"physical_id,omitempty" xml:"physical_id,omitempty"`
+}
+
+// StackEvents wraps a list of stack events for formatted output.
+type StackEvents struct {
+	XMLName   xml.Name     `json:"-" yaml:"-" toml:"-" xml:"stack_events"`
+	StackName string       `json:"stack_name" yaml:"stack_name" toml:"stack_name" xml:"stack_name"`
+	Events    []StackEvent `json:"events" yaml:"events" toml:"events" xml:"event"`
+}

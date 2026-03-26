@@ -75,3 +75,18 @@ func (f *CSVFormatter) FormatList(w io.Writer, data *model.StackList) error {
 	}
 	return nil
 }
+
+func (f *CSVFormatter) FormatEvents(w io.Writer, data *model.StackEvents) error {
+	cw := csv.NewWriter(w)
+	defer cw.Flush()
+
+	if err := cw.Write([]string{"timestamp", "logical_id", "status", "status_reason", "resource_type", "physical_id"}); err != nil {
+		return err
+	}
+	for _, e := range data.Events {
+		if err := cw.Write([]string{e.Timestamp, e.LogicalID, e.Status, e.StatusReason, e.ResourceType, e.PhysicalID}); err != nil {
+			return err
+		}
+	}
+	return nil
+}

@@ -111,6 +111,7 @@ Use "cfnpeek ls" to list all stacks in a region.`,
 
 	// --- Subcommands ---
 	cmd.AddCommand(newLsCmd())
+	cmd.AddCommand(newLogsCmd())
 
 	return cmd
 }
