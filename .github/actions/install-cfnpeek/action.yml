@@ -1,0 +1,75 @@
+name: Install cfnpeek
+description: Download and cache the cfnpeek binary for GitHub Actions
+
+inputs:
+  version:
+    description: "cfnpeek version to install (e.g., v1.2.3 or 'latest')"
+    required: false
+    default: "latest"
+  github-token:
+    description: "GitHub token for API access (required for private repo releases)"
+    required: true
+
+outputs:
+  version:
+    description: "Installed cfnpeek version"
+    value: ${{ steps.version.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Determine version and platform
+      id: version
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        if [ "${{ inputs.version }}" = "latest" ]; then
+          VERSION=$(gh api repos/awesome-foundation/cfnpeek/releases/latest --jq '.tag_name')
+        else
+          VERSION="${{ inputs.version }}"
+        fi
+        echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+        ARCH=$(uname -m)
+        case "$ARCH" in
+          x86_64) ARCH="amd64" ;;
+          aarch64|arm64) ARCH="arm64" ;;
+        esac
+        echo "os=${OS}" >> "$GITHUB_OUTPUT"
+        echo "arch=${ARCH}" >> "$GITHUB_OUTPUT"
+
+    - name: Cache cfnpeek binary
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.tool_cache }}/cfnpeek
+        key: cfnpeek-${{ steps.version.outputs.version }}-${{ steps.version.outputs.os }}-${{ steps.version.outputs.arch }}
+
+    - name: Download cfnpeek
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        OS="${{ steps.version.outputs.os }}"
+        ARCH="${{ steps.version.outputs.arch }}"
+        INSTALL_DIR="${{ runner.tool_cache }}/cfnpeek"
+        mkdir -p "${INSTALL_DIR}"
+
+        gh release download "${VERSION}" \
+          --repo awesome-foundation/cfnpeek \
+          --pattern "cfnpeek_${VERSION#v}_${OS}_${ARCH}.tar.gz" \
+          --output - | tar xz -C "${INSTALL_DIR}" cfnpeek
+
+        chmod +x "${INSTALL_DIR}/cfnpeek"
+
+    - name: Add to PATH
+      shell: bash
+      run: echo "${{ runner.tool_cache }}/cfnpeek" >> "$GITHUB_PATH"
+
+    - name: Verify installation
+      shell: bash
+      run: cfnpeek --version
