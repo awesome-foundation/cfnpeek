@@ -1,6 +1,6 @@
 ---
 name: cfnpeek
-description: Download and use cfnpeek to inspect AWS CloudFormation stacks (resources, outputs, exports)
+description: Download and use cfnpeek to inspect AWS CloudFormation stacks (resources, outputs, exports, events)
 ---
 
 # cfnpeek - CloudFormation Stack Inspector
@@ -21,68 +21,44 @@ If not installed, download the latest release to `~/.local/bin`:
 # macOS (Apple Silicon)
 curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_darwin_arm64.tar.gz | tar xz -C ~/.local/bin
 
-# macOS (Intel)
-curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_darwin_amd64.tar.gz | tar xz -C ~/.local/bin
-
-# Linux (amd64)
-curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_linux_amd64.tar.gz | tar xz -C ~/.local/bin
-
 # Or with go install (installs to ~/go/bin)
 go install github.com/awesome-foundation/cfnpeek/cmd/cfnpeek@latest
 ```
 
 ## Usage
 
-### List stacks
-
 ```bash
-# List all active stacks in current region
-cfnpeek ls
-
-# List stacks in specific region
-cfnpeek ls -r us-west-2
-
-# List stacks with specific AWS profile
-cfnpeek ls -p production
-```
-
-### Inspect stacks
-
-```bash
-# All info (resources, outputs, exports)
-# Displays as table in TTY, JSON when piped
-cfnpeek <stack-name-or-arn>
-
-# Show only resources
-cfnpeek <stack-name> --resources
-
-# Show only outputs
-cfnpeek <stack-name> --outputs
-
-# Show only exports
-cfnpeek <stack-name> --exports
-
-# Specific region/profile
-cfnpeek <stack-name> -r us-west-2 -p production
-
-# Output formats: auto (default), table, json, yaml, toml, xml, ini, csv
-cfnpeek <stack-name> -f json
-cfnpeek <stack-name> -f yaml
-cfnpeek <stack-name> -f table
-
-# Pipe-friendly (auto-detects non-TTY, outputs JSON)
-cfnpeek <stack-name> | jq '.outputs'
-cfnpeek api-stack --resources | jq '.resources[] | select(.type == "AWS::Lambda::Function")'
+cfnpeek ls                        # List all stacks in region
+cfnpeek <stack>                   # All sections (resources, outputs, exports, events)
+cfnpeek <stack> resources         # Resources only
+cfnpeek <stack> outputs           # Outputs only
+cfnpeek <stack> exports           # Exports only
+cfnpeek <stack> events            # Stack events (deploy log)
+cfnpeek <stack> resources,events  # Combine with commas
 ```
 
 ### Flags
 
-- `-r, --region` — AWS region (default: from AWS config)
-- `-p, --profile` — AWS profile name (default: default)
-- `-f, --format` — Output format: auto, table, json, yaml, toml, xml, ini, csv (default: auto)
-- `--resources` — Show resources only
-- `--outputs` — Show outputs only
-- `--exports` — Show exports only
+```bash
+-r, --region     AWS region
+-p, --profile    AWS profile
+-f, --format     auto, table, json, yaml, toml, xml, ini, csv (default: auto)
+-s, --short      Compact output (fewer columns in table/csv/ini)
+    --type       Filter resources by type (fuzzy, e.g. --type ec2)
+    --grep       Filter outputs/exports by key or value (e.g. --grep vpc)
+    --limit      Max events to show (default: 20, 0 for all)
+```
+
+### Examples
+
+```bash
+cfnpeek my-stack -r eu-west-1 -p production
+cfnpeek my-stack resources --type lambda
+cfnpeek my-stack outputs --grep endpoint
+cfnpeek my-stack events --limit 10
+cfnpeek my-stack -f json | jq '.resources[] | select(.type == "AWS::Lambda::Function")'
+cfnpeek my-stack -s                          # compact table output
+```
 
 ## Important
 
