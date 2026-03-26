@@ -6,7 +6,10 @@
   "packages": {
     ".": {
       "component": "cfnpeek",
-      "changelog-path": "CHANGELOG.md"
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        "README.md"
+      ]
     }
   }
 }
