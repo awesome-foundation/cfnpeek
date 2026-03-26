@@ -21,7 +21,14 @@ var (
 	format  string
 )
 
-var sections = []string{"all", "resources", "outputs", "exports", "events"}
+var validSections = map[string]bool{
+	"all":       true,
+	"resources": true,
+	"outputs":   true,
+	"exports":   true,
+	"events":    true,
+	"logs":      true, // silent alias for events
+}
 
 // resolveFormat picks the output format, auto-detecting TTY when set to "auto".
 func resolveFormat() string {
@@ -69,6 +76,7 @@ Commands:
   cfnpeek my-stack resources
   cfnpeek my-stack outputs
   cfnpeek my-stack events
+  cfnpeek my-stack resources,events
   cfnpeek my-stack events --limit 10
   cfnpeek my-stack resources --type ec2
   cfnpeek my-stack outputs --grep vpc
@@ -78,21 +86,30 @@ Commands:
 		Version: version,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stackName := args[0]
-			section := "all"
+			sectionArg := "all"
 			if len(args) > 1 {
-				section = strings.ToLower(args[1])
+				sectionArg = strings.ToLower(args[1])
 			}
 
-			// Validate section
-			valid := false
-			for _, s := range sections {
-				if s == section {
-					valid = true
-					break
+			// Parse comma-separated sections
+			parts := strings.Split(sectionArg, ",")
+			want := make(map[string]bool)
+			for _, p := range parts {
+				p = strings.TrimSpace(p)
+				if p == "logs" {
+					p = "events" // silent alias
 				}
-			}
-			if !valid {
-				return fmt.Errorf("unknown command %q (available: %s)", section, strings.Join(sections, ", "))
+				if !validSections[p] {
+					return fmt.Errorf("unknown command %q (available: all, resources, outputs, exports, events)", p)
+				}
+				if p == "all" {
+					want["resources"] = true
+					want["outputs"] = true
+					want["exports"] = true
+					want["events"] = true
+				} else {
+					want[p] = true
+				}
 			}
 
 			ctx := context.Background()
@@ -102,37 +119,13 @@ Commands:
 				return err
 			}
 
-			// Handle events separately
-			if section == "events" {
-				return runEvents(ctx, client, cmd, stackName)
-			}
-
-			// Determine which sections to fetch
-			wantResources := section == "all" || section == "resources"
-			wantOutputs := section == "all" || section == "outputs"
-			wantExports := section == "all" || section == "exports"
-
 			// --type and --grep expand what we fetch
 			if typeFilter != "" {
-				wantResources = true
+				want["resources"] = true
 			}
 			if grepFilter != "" {
-				wantOutputs = true
-				wantExports = true
-			}
-
-			info, err := client.FetchStackInfo(ctx, stackName, wantResources, wantOutputs, wantExports)
-			if err != nil {
-				return fmt.Errorf("%s", cfnaws.FormatError(err))
-			}
-
-			// Apply post-fetch filters
-			if typeFilter != "" {
-				info.Resources = filter.Resources(info.Resources, typeFilter)
-			}
-			if grepFilter != "" {
-				info.Outputs = filter.Outputs(info.Outputs, grepFilter)
-				info.Exports = filter.Exports(info.Exports, grepFilter)
+				want["outputs"] = true
+				want["exports"] = true
 			}
 
 			resolved := resolveFormat()
@@ -141,7 +134,35 @@ Commands:
 				return err
 			}
 
-			return fmtr.Format(os.Stdout, info)
+			// Fetch and display stack info sections
+			if want["resources"] || want["outputs"] || want["exports"] {
+				info, err := client.FetchStackInfo(ctx, stackName, want["resources"], want["outputs"], want["exports"])
+				if err != nil {
+					return fmt.Errorf("%s", cfnaws.FormatError(err))
+				}
+
+				if typeFilter != "" {
+					info.Resources = filter.Resources(info.Resources, typeFilter)
+				}
+				if grepFilter != "" {
+					info.Outputs = filter.Outputs(info.Outputs, grepFilter)
+					info.Exports = filter.Exports(info.Exports, grepFilter)
+				}
+
+				if err := fmtr.Format(os.Stdout, info); err != nil {
+					return err
+				}
+			}
+
+			// Fetch and display events
+			if want["events"] {
+				if want["resources"] || want["outputs"] || want["exports"] {
+					fmt.Fprintln(os.Stdout) //nolint:errcheck
+				}
+				return runEvents(ctx, client, cmd, stackName)
+			}
+
+			return nil
 		},
 	}
 
