@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/awesome-foundation/cfnpeek/compare/v0.3.1...v0.4.0) (2026-03-26)
+
+
+### Features
+
+* add --type and --grep filtering flags ([#13](https://github.com/awesome-foundation/cfnpeek/issues/13)) ([86e5ce5](https://github.com/awesome-foundation/cfnpeek/commit/86e5ce52bdb922c2b2c9f0ec2e4f2866644b3db2))
+* restructure CLI to positional commands ([#15](https://github.com/awesome-foundation/cfnpeek/issues/15)) ([9bde894](https://github.com/awesome-foundation/cfnpeek/commit/9bde894e9306b3bd60aa598753ec51d542e94c91))
+
+
+### Bug Fixes
+
+* single version variable for download URLs ([#9](https://github.com/awesome-foundation/cfnpeek/issues/9)) ([476ec13](https://github.com/awesome-foundation/cfnpeek/commit/476ec13f77c8e24d5396b4d7c33ba48254bd603f))
+
 ## [0.3.1](https://github.com/awesome-foundation/cfnpeek/compare/v0.3.0...v0.3.1) (2026-03-26)
 
 
