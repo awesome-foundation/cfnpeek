@@ -17,6 +17,11 @@ type ListFormatter interface {
 	FormatList(w io.Writer, data *model.StackList) error
 }
 
+// EventFormatter renders a StackEvents to an output stream.
+type EventFormatter interface {
+	FormatEvents(w io.Writer, data *model.StackEvents) error
+}
+
 var registry = map[string]func() Formatter{
 	"json":  func() Formatter { return &JSONFormatter{} },
 	"yaml":  func() Formatter { return &YAMLFormatter{} },

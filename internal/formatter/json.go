@@ -20,3 +20,9 @@ func (f *JSONFormatter) FormatList(w io.Writer, data *model.StackList) error {
 	enc.SetIndent("", "  ")
 	return enc.Encode(data)
 }
+
+func (f *JSONFormatter) FormatEvents(w io.Writer, data *model.StackEvents) error {
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(data)
+}

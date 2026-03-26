@@ -13,17 +13,20 @@ import (
 )
 
 type mockAPI struct {
-	describeStacksOutput    *cloudformation.DescribeStacksOutput
-	listStacksPages         []*cloudformation.ListStacksOutput
-	listStackResourcesPages []*cloudformation.ListStackResourcesOutput
-	listExportsPages        []*cloudformation.ListExportsOutput
-	describeErr             error
-	listStacksErr           error
-	listResourcesErr        error
-	listExportsErr          error
-	stacksPage              int
-	resourcePage            int
-	exportPage              int
+	describeStacksOutput      *cloudformation.DescribeStacksOutput
+	describeStackEventsPages  []*cloudformation.DescribeStackEventsOutput
+	listStacksPages           []*cloudformation.ListStacksOutput
+	listStackResourcesPages   []*cloudformation.ListStackResourcesOutput
+	listExportsPages          []*cloudformation.ListExportsOutput
+	describeErr               error
+	describeEventsErr         error
+	listStacksErr             error
+	listResourcesErr          error
+	listExportsErr            error
+	stacksPage                int
+	resourcePage              int
+	exportPage                int
+	eventsPage                int
 }
 
 func (m *mockAPI) ListStacks(_ context.Context, _ *cloudformation.ListStacksInput, _ ...func(*cloudformation.Options)) (*cloudformation.ListStacksOutput, error) {
@@ -43,6 +46,18 @@ func (m *mockAPI) DescribeStacks(_ context.Context, _ *cloudformation.DescribeSt
 		return nil, m.describeErr
 	}
 	return m.describeStacksOutput, nil
+}
+
+func (m *mockAPI) DescribeStackEvents(_ context.Context, _ *cloudformation.DescribeStackEventsInput, _ ...func(*cloudformation.Options)) (*cloudformation.DescribeStackEventsOutput, error) {
+	if m.describeEventsErr != nil {
+		return nil, m.describeEventsErr
+	}
+	if len(m.describeStackEventsPages) == 0 {
+		return &cloudformation.DescribeStackEventsOutput{}, nil
+	}
+	page := m.describeStackEventsPages[m.eventsPage]
+	m.eventsPage++
+	return page, nil
 }
 
 func (m *mockAPI) ListStackResources(_ context.Context, _ *cloudformation.ListStackResourcesInput, _ ...func(*cloudformation.Options)) (*cloudformation.ListStackResourcesOutput, error) {
@@ -142,6 +157,97 @@ func TestFetchStackInfo(t *testing.T) {
 	}
 	if info.Exports[0].Name != "test-stack-BucketArn" {
 		t.Errorf("expected export name 'test-stack-BucketArn', got %q", info.Exports[0].Name)
+	}
+}
+
+func TestFetchEvents(t *testing.T) {
+	t1 := time.Date(2026, 1, 15, 10, 30, 5, 0, time.UTC)
+	t2 := time.Date(2026, 1, 15, 10, 30, 0, 0, time.UTC) // older
+
+	mock := &mockAPI{
+		describeStackEventsPages: []*cloudformation.DescribeStackEventsOutput{
+			{
+				// AWS returns newest first
+				StackEvents: []cftypes.StackEvent{
+					{
+						Timestamp:            &t1,
+						LogicalResourceId:    awssdk.String("Subnet"),
+						ResourceStatus:       cftypes.ResourceStatusCreateFailed,
+						ResourceStatusReason: awssdk.String("Resource limit exceeded"),
+						ResourceType:         awssdk.String("AWS::EC2::Subnet"),
+						PhysicalResourceId:   awssdk.String(""),
+					},
+					{
+						Timestamp:          &t2,
+						LogicalResourceId:  awssdk.String("VPC"),
+						ResourceStatus:     cftypes.ResourceStatusCreateComplete,
+						ResourceType:       awssdk.String("AWS::EC2::VPC"),
+						PhysicalResourceId: awssdk.String("vpc-abc123"),
+					},
+				},
+			},
+		},
+	}
+
+	client := cfnaws.NewClientFromAPI(mock)
+
+	t.Run("all events sorted ascending", func(t *testing.T) {
+		result, err := client.FetchEvents(context.Background(), "test-stack", 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result.StackName != "test-stack" {
+			t.Errorf("expected stack name 'test-stack', got %q", result.StackName)
+		}
+		if len(result.Events) != 2 {
+			t.Fatalf("expected 2 events, got %d", len(result.Events))
+		}
+		// After reversal the older event (VPC) should be first
+		if result.Events[0].LogicalID != "VPC" {
+			t.Errorf("expected first event LogicalID 'VPC', got %q", result.Events[0].LogicalID)
+		}
+		if result.Events[1].LogicalID != "Subnet" {
+			t.Errorf("expected second event LogicalID 'Subnet', got %q", result.Events[1].LogicalID)
+		}
+		if result.Events[1].StatusReason != "Resource limit exceeded" {
+			t.Errorf("expected status reason 'Resource limit exceeded', got %q", result.Events[1].StatusReason)
+		}
+	})
+}
+
+func TestFetchEventsLimit(t *testing.T) {
+	t1 := time.Date(2026, 1, 15, 10, 30, 0, 0, time.UTC)
+	t2 := time.Date(2026, 1, 15, 10, 30, 5, 0, time.UTC)
+	t3 := time.Date(2026, 1, 15, 10, 30, 10, 0, time.UTC)
+
+	mock := &mockAPI{
+		describeStackEventsPages: []*cloudformation.DescribeStackEventsOutput{
+			{
+				// AWS returns newest first
+				StackEvents: []cftypes.StackEvent{
+					{Timestamp: &t3, LogicalResourceId: awssdk.String("C"), ResourceType: awssdk.String("AWS::CloudFormation::Stack"), ResourceStatus: cftypes.ResourceStatusCreateComplete},
+					{Timestamp: &t2, LogicalResourceId: awssdk.String("B"), ResourceType: awssdk.String("AWS::CloudFormation::Stack"), ResourceStatus: cftypes.ResourceStatusCreateComplete},
+					{Timestamp: &t1, LogicalResourceId: awssdk.String("A"), ResourceType: awssdk.String("AWS::CloudFormation::Stack"), ResourceStatus: cftypes.ResourceStatusCreateComplete},
+				},
+			},
+		},
+	}
+
+	client := cfnaws.NewClientFromAPI(mock)
+
+	result, err := client.FetchEvents(context.Background(), "test-stack", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Events) != 2 {
+		t.Fatalf("expected 2 events after limit, got %d", len(result.Events))
+	}
+	// Should keep the last 2 (B and C, i.e. the most recent)
+	if result.Events[0].LogicalID != "B" {
+		t.Errorf("expected first event 'B', got %q", result.Events[0].LogicalID)
+	}
+	if result.Events[1].LogicalID != "C" {
+		t.Errorf("expected second event 'C', got %q", result.Events[1].LogicalID)
 	}
 }
 

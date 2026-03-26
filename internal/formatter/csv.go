@@ -58,6 +58,23 @@ func (f *CSVFormatter) Format(w io.Writer, data *model.StackInfo) error {
 		}
 	}
 
+	if len(data.Events) > 0 {
+		if len(data.Resources) > 0 || len(data.Outputs) > 0 || len(data.Exports) > 0 {
+			cw.Flush()
+			if _, err := io.WriteString(w, "\n"); err != nil {
+				return err
+			}
+		}
+		if err := cw.Write([]string{"timestamp", "logical_id", "resource_type", "status", "status_reason"}); err != nil {
+			return err
+		}
+		for _, e := range data.Events {
+			if err := cw.Write([]string{e.Timestamp, e.LogicalID, e.ResourceType, e.Status, e.StatusReason}); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -70,6 +87,21 @@ func (f *CSVFormatter) FormatList(w io.Writer, data *model.StackList) error {
 	}
 	for _, s := range data.Stacks {
 		if err := cw.Write([]string{s.StackName, s.Status, s.CreatedAt, s.UpdatedAt, s.Description}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (f *CSVFormatter) FormatEvents(w io.Writer, data *model.StackEvents) error {
+	cw := csv.NewWriter(w)
+	defer cw.Flush()
+
+	if err := cw.Write([]string{"timestamp", "logical_id", "status", "status_reason", "resource_type", "physical_id"}); err != nil {
+		return err
+	}
+	for _, e := range data.Events {
+		if err := cw.Write([]string{e.Timestamp, e.LogicalID, e.Status, e.StatusReason, e.ResourceType, e.PhysicalID}); err != nil {
 			return err
 		}
 	}
