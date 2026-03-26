@@ -12,6 +12,12 @@ type Formatter interface {
 	Format(w io.Writer, data *model.StackInfo) error
 }
 
+// ShortSetter can toggle compact output mode.
+// Table, CSV, and INI formatters implement this.
+type ShortSetter interface {
+	SetShort(short bool)
+}
+
 // ListFormatter renders a StackList to an output stream.
 type ListFormatter interface {
 	FormatList(w io.Writer, data *model.StackList) error

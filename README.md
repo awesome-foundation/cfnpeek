@@ -34,26 +34,38 @@ go install github.com/awesome-foundation/cfnpeek/cmd/cfnpeek@latest
 ## Usage
 
 ```bash
-# Show everything (resources, outputs, exports)
-cfnpeek my-stack
+cfnpeek <stack>                   # Show all (resources, outputs, exports, events)
+cfnpeek <stack> resources         # Show resources only
+cfnpeek <stack> outputs           # Show outputs only
+cfnpeek <stack> exports           # Show exports only
+cfnpeek <stack> events            # Show stack events (deploy log)
+cfnpeek <stack> resources,events  # Combine sections with commas
+cfnpeek ls                        # List all stacks in the region
+```
 
-# Specific sections
-cfnpeek my-stack --resources
-cfnpeek my-stack --outputs
-cfnpeek my-stack --exports
+Output defaults to **table** in a terminal, **JSON** when piped.
 
-# Output formats: json, yaml, toml, xml, ini, csv, table
-cfnpeek my-stack -f json
-cfnpeek my-stack -f yaml
+### Flags
 
-# Region and profile
-cfnpeek my-stack -r eu-west-1 -p production
+```bash
+# Output format
+cfnpeek my-stack -f json          # json, yaml, toml, xml, ini, csv, table, auto
+cfnpeek my-stack -s               # Compact output (fewer columns in table/csv/ini)
+
+# AWS config
+cfnpeek my-stack -r eu-west-1     # Region
+cfnpeek my-stack -p production    # Profile
+
+# Filtering
+cfnpeek my-stack resources --type ec2      # Fuzzy match on resource type
+cfnpeek my-stack outputs --grep vpc        # Substring match on output/export key or value
+
+# Events
+cfnpeek my-stack events --limit 10         # Last N events (default: 20, 0 for all)
 
 # Stack ARN works too
 cfnpeek arn:aws:cloudformation:us-east-1:123456789:stack/my-stack/guid
 ```
-
-Output defaults to **table** in a terminal, **JSON** when piped.
 
 ## Output Formats
 
@@ -62,7 +74,7 @@ Output defaults to **table** in a terminal, **JSON** when piped.
 | Table | `-f table` | Default for TTY. Aligned columns. |
 | JSON | `-f json` | Default when piped. Indented. |
 | YAML | `-f yaml` | |
-| TOML | `-f toml` | |
+| TOML | `-f toml` | Named keys (`[resources.LogicalID]`). |
 | XML | `-f xml` | With XML declaration. |
 | INI | `-f ini` | Named keys and sections. |
 | CSV | `-f csv` | Separate header rows per section. |
@@ -216,6 +228,26 @@ NAME                STATUS            UPDATED                DESCRIPTION
 awesome-bastion     CREATE_COMPLETE   2026-02-10T14:22:00Z   SSH bastion host
 awesome-vpc-prod    UPDATE_COMPLETE   2026-03-20T09:15:00Z   Production VPC
 awesome-web-prod    UPDATE_COMPLETE   2026-03-25T16:45:00Z   ECS cluster and ALB
+```
+
+### `cfnpeek ls -s` (short)
+
+```
+Stacks (3)
+NAME                STATUS            UPDATED
+awesome-bastion     CREATE_COMPLETE   2026-02-10T14:22:00Z
+awesome-vpc-prod    UPDATE_COMPLETE   2026-03-20T09:15:00Z
+awesome-web-prod    UPDATE_COMPLETE   2026-03-25T16:45:00Z
+```
+
+### `cfnpeek my-stack events`
+
+```
+Events for awesome-vpc-prod (3)
+TIMESTAMP               LOGICAL ID          TYPE                      STATUS              REASON
+2026-01-15T10:30:00Z    awesome-vpc-prod    AWS::CloudFormation::Stack UPDATE_COMPLETE
+2026-01-15T10:30:05Z    VPC                 AWS::EC2::VPC              UPDATE_COMPLETE
+2026-01-15T10:29:50Z    VPC                 AWS::EC2::VPC              UPDATE_IN_PROGRESS
 ```
 
 ## License

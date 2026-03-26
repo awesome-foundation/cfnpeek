@@ -7,7 +7,9 @@ import (
 	"github.com/awesome-foundation/cfnpeek/internal/model"
 )
 
-type TableFormatter struct{}
+type TableFormatter struct{ short bool }
+
+func (f *TableFormatter) SetShort(short bool) { f.short = short }
 
 func (f *TableFormatter) Format(w io.Writer, data *model.StackInfo) error {
 	ew := &errWriter{w: w}
@@ -24,9 +26,16 @@ func (f *TableFormatter) Format(w io.Writer, data *model.StackInfo) error {
 		ew.printf("Resources (%d)\n", len(data.Resources))
 		tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 		ew2 := &errWriter{w: tw}
-		ew2.printf("LOGICAL ID\tPHYSICAL ID\tTYPE\tSTATUS\n")
-		for _, r := range data.Resources {
-			ew2.printf("%s\t%s\t%s\t%s\n", r.LogicalID, r.PhysicalID, r.Type, r.Status)
+		if f.short {
+			ew2.printf("LOGICAL ID\tTYPE\tSTATUS\n")
+			for _, r := range data.Resources {
+				ew2.printf("%s\t%s\t%s\n", r.LogicalID, r.Type, r.Status)
+			}
+		} else {
+			ew2.printf("LOGICAL ID\tPHYSICAL ID\tTYPE\tSTATUS\n")
+			for _, r := range data.Resources {
+				ew2.printf("%s\t%s\t%s\t%s\n", r.LogicalID, r.PhysicalID, r.Type, r.Status)
+			}
 		}
 		if ew2.err != nil {
 			return ew2.err
@@ -41,9 +50,16 @@ func (f *TableFormatter) Format(w io.Writer, data *model.StackInfo) error {
 		ew.printf("Outputs (%d)\n", len(data.Outputs))
 		tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 		ew2 := &errWriter{w: tw}
-		ew2.printf("KEY\tVALUE\tEXPORT NAME\n")
-		for _, o := range data.Outputs {
-			ew2.printf("%s\t%s\t%s\n", o.Key, o.Value, o.ExportName)
+		if f.short {
+			ew2.printf("KEY\tVALUE\n")
+			for _, o := range data.Outputs {
+				ew2.printf("%s\t%s\n", o.Key, o.Value)
+			}
+		} else {
+			ew2.printf("KEY\tVALUE\tEXPORT NAME\n")
+			for _, o := range data.Outputs {
+				ew2.printf("%s\t%s\t%s\n", o.Key, o.Value, o.ExportName)
+			}
 		}
 		if ew2.err != nil {
 			return ew2.err
@@ -75,9 +91,16 @@ func (f *TableFormatter) Format(w io.Writer, data *model.StackInfo) error {
 		ew.printf("Events (%d)\n", len(data.Events))
 		tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 		ew2 := &errWriter{w: tw}
-		ew2.printf("TIMESTAMP\tLOGICAL ID\tSTATUS\tREASON\n")
-		for _, e := range data.Events {
-			ew2.printf("%s\t%s\t%s\t%s\n", e.Timestamp, e.LogicalID, e.Status, e.StatusReason)
+		if f.short {
+			ew2.printf("TIMESTAMP\tLOGICAL ID\tSTATUS\tREASON\n")
+			for _, e := range data.Events {
+				ew2.printf("%s\t%s\t%s\t%s\n", e.Timestamp, e.LogicalID, e.Status, e.StatusReason)
+			}
+		} else {
+			ew2.printf("TIMESTAMP\tLOGICAL ID\tTYPE\tSTATUS\tREASON\n")
+			for _, e := range data.Events {
+				ew2.printf("%s\t%s\t%s\t%s\t%s\n", e.Timestamp, e.LogicalID, e.ResourceType, e.Status, e.StatusReason)
+			}
 		}
 		if ew2.err != nil {
 			return ew2.err
@@ -96,9 +119,16 @@ func (f *TableFormatter) FormatEvents(w io.Writer, data *model.StackEvents) erro
 
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	ew2 := &errWriter{w: tw}
-	ew2.printf("TIMESTAMP\tLOGICAL ID\tSTATUS\tREASON\n")
-	for _, e := range data.Events {
-		ew2.printf("%s\t%s\t%s\t%s\n", e.Timestamp, e.LogicalID, e.Status, e.StatusReason)
+	if f.short {
+		ew2.printf("TIMESTAMP\tLOGICAL ID\tSTATUS\tREASON\n")
+		for _, e := range data.Events {
+			ew2.printf("%s\t%s\t%s\t%s\n", e.Timestamp, e.LogicalID, e.Status, e.StatusReason)
+		}
+	} else {
+		ew2.printf("TIMESTAMP\tLOGICAL ID\tTYPE\tSTATUS\tREASON\n")
+		for _, e := range data.Events {
+			ew2.printf("%s\t%s\t%s\t%s\t%s\n", e.Timestamp, e.LogicalID, e.ResourceType, e.Status, e.StatusReason)
+		}
 	}
 	if ew2.err != nil {
 		return ew2.err
@@ -116,17 +146,28 @@ func (f *TableFormatter) FormatList(w io.Writer, data *model.StackList) error {
 
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	ew2 := &errWriter{w: tw}
-	ew2.printf("NAME\tSTATUS\tUPDATED\tDESCRIPTION\n")
-	for _, s := range data.Stacks {
-		updated := s.UpdatedAt
-		if updated == "" {
-			updated = s.CreatedAt
+	if f.short {
+		ew2.printf("NAME\tSTATUS\tUPDATED\n")
+		for _, s := range data.Stacks {
+			updated := s.UpdatedAt
+			if updated == "" {
+				updated = s.CreatedAt
+			}
+			ew2.printf("%s\t%s\t%s\n", s.StackName, s.Status, updated)
 		}
-		desc := s.Description
-		if len(desc) > 60 {
-			desc = desc[:57] + "..."
+	} else {
+		ew2.printf("NAME\tSTATUS\tUPDATED\tDESCRIPTION\n")
+		for _, s := range data.Stacks {
+			updated := s.UpdatedAt
+			if updated == "" {
+				updated = s.CreatedAt
+			}
+			desc := s.Description
+			if len(desc) > 60 {
+				desc = desc[:57] + "..."
+			}
+			ew2.printf("%s\t%s\t%s\t%s\n", s.StackName, s.Status, updated, desc)
 		}
-		ew2.printf("%s\t%s\t%s\t%s\n", s.StackName, s.Status, updated, desc)
 	}
 	if ew2.err != nil {
 		return ew2.err

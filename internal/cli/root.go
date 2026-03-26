@@ -19,6 +19,7 @@ var (
 	region  string
 	profile string
 	format  string
+	short   bool
 )
 
 var validSections = map[string]bool{
@@ -161,6 +162,9 @@ Commands:
 			if err != nil {
 				return err
 			}
+			if ss, ok := fmtr.(formatter.ShortSetter); ok {
+				ss.SetShort(short)
+			}
 
 			return fmtr.Format(os.Stdout, info)
 		},
@@ -171,6 +175,7 @@ Commands:
 	pflags.StringVarP(&region, "region", "r", "", "AWS region (overrides AWS_REGION / config)")
 	pflags.StringVarP(&profile, "profile", "p", "", "AWS profile (overrides AWS_PROFILE)")
 	pflags.StringVarP(&format, "format", "f", "auto", "Output format: auto, table, json, yaml, toml, xml, ini, csv")
+	pflags.BoolVarP(&short, "short", "s", false, "Compact output — hide non-critical fields in table/csv/ini")
 
 	// --- Inspect flags ---
 	flags := cmd.Flags()
