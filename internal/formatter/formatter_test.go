@@ -117,7 +117,7 @@ func TestTOMLContainsFields(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := buf.String()
-	for _, want := range []string{"stack_name", "test-stack", "MyBucket"} {
+	for _, want := range []string{"name", "test-stack", "MyBucket"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("TOML output missing %q", want)
 		}
@@ -132,7 +132,7 @@ func TestINIContainsSections(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := buf.String()
-	for _, want := range []string{"[stack]", "[resources]", "[outputs]", "[exports]"} {
+	for _, want := range []string{"[stack]", "[resource.MyBucket]", "[outputs]", "[exports]"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("INI output missing section %q", want)
 		}
