@@ -7,16 +7,14 @@ Read-only CLI for inspecting deployed AWS CloudFormation stacks. Lists resources
 Download the latest release for your platform from [Releases](https://github.com/awesome-foundation/cfnpeek/releases), or:
 
 ```bash
-V=0.3.1 # x-release-please-version
-
 # macOS (Apple Silicon)
-curl -sSL "https://github.com/awesome-foundation/cfnpeek/releases/download/v${V}/cfnpeek_${V}_darwin_arm64.tar.gz" | tar xz -C /usr/local/bin
+curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_0.3.1_darwin_arm64.tar.gz | tar xz -C /usr/local/bin # x-release-please-version
 
 # macOS (Intel)
-curl -sSL "https://github.com/awesome-foundation/cfnpeek/releases/download/v${V}/cfnpeek_${V}_darwin_amd64.tar.gz" | tar xz -C /usr/local/bin
+curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_0.3.1_darwin_amd64.tar.gz | tar xz -C /usr/local/bin # x-release-please-version
 
 # Linux (amd64)
-curl -sSL "https://github.com/awesome-foundation/cfnpeek/releases/download/v${V}/cfnpeek_${V}_linux_amd64.tar.gz" | tar xz -C /usr/local/bin
+curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_0.3.1_linux_amd64.tar.gz | tar xz -C /usr/local/bin # x-release-please-version
 
 # From source
 go install github.com/awesome-foundation/cfnpeek/cmd/cfnpeek@latest
