@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	cfnaws "github.com/awesome-foundation/cfnpeek/internal/aws"
+	"github.com/awesome-foundation/cfnpeek/internal/filter"
 	"github.com/awesome-foundation/cfnpeek/internal/formatter"
 )
 
@@ -45,6 +46,8 @@ func NewRootCmd(version string) *cobra.Command {
 		showResources bool
 		showOutputs   bool
 		showExports   bool
+		typeFilter    string
+		grepFilter    string
 	)
 
 	cmd := &cobra.Command{
@@ -59,6 +62,9 @@ Use "cfnpeek ls" to list all stacks in a region.`,
 		Example: `  cfnpeek my-stack
   cfnpeek my-stack --resources
   cfnpeek my-stack --outputs --exports
+  cfnpeek my-stack --type ec2
+  cfnpeek my-stack --grep vpc
+  cfnpeek my-stack --type ec2 --grep vpc
   cfnpeek my-stack -f json -r eu-west-1
   cfnpeek arn:aws:cloudformation:us-east-1:123456789:stack/my-stack/guid`,
 		Args:    cobra.ExactArgs(1),
@@ -67,11 +73,18 @@ Use "cfnpeek ls" to list all stacks in a region.`,
 			ctx := context.Background()
 			stackName := args[0]
 
-			// No section flags = show all
-			wantResources := showResources
-			wantOutputs := showOutputs
-			wantExports := showExports
-			if !showResources && !showOutputs && !showExports {
+			hasTypeFilter := typeFilter != ""
+			hasGrepFilter := grepFilter != ""
+
+			// Determine which sections to fetch from AWS.
+			// --type implies resources; --grep implies outputs and exports.
+			// Explicit section flags are also honoured.
+			wantResources := showResources || hasTypeFilter
+			wantOutputs := showOutputs || hasGrepFilter
+			wantExports := showExports || hasGrepFilter
+
+			// No section flags and no filters = show all.
+			if !showResources && !showOutputs && !showExports && !hasTypeFilter && !hasGrepFilter {
 				wantResources = true
 				wantOutputs = true
 				wantExports = true
@@ -85,6 +98,28 @@ Use "cfnpeek ls" to list all stacks in a region.`,
 			info, err := client.FetchStackInfo(ctx, stackName, wantResources, wantOutputs, wantExports)
 			if err != nil {
 				return fmt.Errorf("%s", cfnaws.FormatError(err))
+			}
+
+			// Apply post-fetch filters on the model data.
+			if hasTypeFilter {
+				info.Resources = filter.Resources(info.Resources, typeFilter)
+				// When --type is used without --grep, suppress outputs/exports
+				// unless they were explicitly requested.
+				if !hasGrepFilter && !showOutputs {
+					info.Outputs = nil
+				}
+				if !hasGrepFilter && !showExports {
+					info.Exports = nil
+				}
+			}
+			if hasGrepFilter {
+				info.Outputs = filter.Outputs(info.Outputs, grepFilter)
+				info.Exports = filter.Exports(info.Exports, grepFilter)
+				// When --grep is used without --type, suppress resources
+				// unless they were explicitly requested.
+				if !hasTypeFilter && !showResources {
+					info.Resources = nil
+				}
 			}
 
 			resolved := resolveFormat()
@@ -108,6 +143,8 @@ Use "cfnpeek ls" to list all stacks in a region.`,
 	flags.BoolVar(&showResources, "resources", false, "Show only resources")
 	flags.BoolVar(&showOutputs, "outputs", false, "Show only outputs")
 	flags.BoolVar(&showExports, "exports", false, "Show only exports")
+	flags.StringVar(&typeFilter, "type", "", "Filter resources by type (case-insensitive substring match, implies --resources)")
+	flags.StringVar(&grepFilter, "grep", "", "Filter outputs and exports by key/name or value (case-insensitive substring match, implies --outputs --exports)")
 
 	// --- Subcommands ---
 	cmd.AddCommand(newLsCmd())
