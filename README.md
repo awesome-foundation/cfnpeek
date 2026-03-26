@@ -8,22 +8,22 @@ Download the latest binary from [Releases](https://github.com/awesome-foundation
 
 **macOS (Apple Silicon)**
 ```bash
-curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_0.4.0_darwin_arm64.tar.gz | tar xz -C ~/.local/bin # x-release-please-version
+curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_0.5.0_darwin_arm64.tar.gz | tar xz -C ~/.local/bin # x-release-please-version
 ```
 
 **macOS (Intel)**
 ```bash
-curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_0.4.0_darwin_amd64.tar.gz | tar xz -C ~/.local/bin # x-release-please-version
+curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_0.5.0_darwin_amd64.tar.gz | tar xz -C ~/.local/bin # x-release-please-version
 ```
 
 **Linux (amd64)**
 ```bash
-curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_0.4.0_linux_amd64.tar.gz | tar xz -C ~/.local/bin # x-release-please-version
+curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_0.5.0_linux_amd64.tar.gz | tar xz -C ~/.local/bin # x-release-please-version
 ```
 
 **Linux (arm64)**
 ```bash
-curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_0.4.0_linux_arm64.tar.gz | tar xz -C ~/.local/bin # x-release-please-version
+curl -sSL https://github.com/awesome-foundation/cfnpeek/releases/latest/download/cfnpeek_0.5.0_linux_arm64.tar.gz | tar xz -C ~/.local/bin # x-release-please-version
 ```
 
 **From source**
