@@ -2,7 +2,6 @@ package formatter
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io"
 
 	"github.com/awesome-foundation/cfnpeek/internal/model"
@@ -27,7 +26,10 @@ func (f *CSVFormatter) Format(w io.Writer, data *model.StackInfo) error {
 
 	if len(data.Outputs) > 0 {
 		if len(data.Resources) > 0 {
-			fmt.Fprintln(w)
+			cw.Flush() // flush before section separator
+		if _, err := io.WriteString(w, "\n"); err != nil {
+			return err
+		}
 		}
 		if err := cw.Write([]string{"key", "value", "description", "export_name"}); err != nil {
 			return err
@@ -41,7 +43,10 @@ func (f *CSVFormatter) Format(w io.Writer, data *model.StackInfo) error {
 
 	if len(data.Exports) > 0 {
 		if len(data.Resources) > 0 || len(data.Outputs) > 0 {
-			fmt.Fprintln(w)
+			cw.Flush() // flush before section separator
+		if _, err := io.WriteString(w, "\n"); err != nil {
+			return err
+		}
 		}
 		if err := cw.Write([]string{"name", "value"}); err != nil {
 			return err

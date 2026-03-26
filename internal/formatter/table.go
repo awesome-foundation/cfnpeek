@@ -1,7 +1,6 @@
 package formatter
 
 import (
-	"fmt"
 	"io"
 	"text/tabwriter"
 
@@ -11,49 +10,76 @@ import (
 type TableFormatter struct{}
 
 func (f *TableFormatter) Format(w io.Writer, data *model.StackInfo) error {
-	fmt.Fprintf(w, "Stack: %s\n", data.StackName)
-	fmt.Fprintf(w, "Status: %s\n", data.Status)
-	fmt.Fprintln(w)
+	ew := &errWriter{w: w}
+
+	ew.printf("Stack: %s\n", data.StackName)
+	ew.printf("Status: %s\n", data.Status)
+	ew.println()
+
+	if ew.err != nil {
+		return ew.err
+	}
 
 	if len(data.Resources) > 0 {
-		fmt.Fprintf(w, "Resources (%d)\n", len(data.Resources))
+		ew.printf("Resources (%d)\n", len(data.Resources))
 		tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-		fmt.Fprintf(tw, "LOGICAL ID\tPHYSICAL ID\tTYPE\tSTATUS\n")
+		ew2 := &errWriter{w: tw}
+		ew2.printf("LOGICAL ID\tPHYSICAL ID\tTYPE\tSTATUS\n")
 		for _, r := range data.Resources {
-			fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", r.LogicalID, r.PhysicalID, r.Type, r.Status)
+			ew2.printf("%s\t%s\t%s\t%s\n", r.LogicalID, r.PhysicalID, r.Type, r.Status)
 		}
-		tw.Flush()
-		fmt.Fprintln(w)
+		if ew2.err != nil {
+			return ew2.err
+		}
+		if err := tw.Flush(); err != nil {
+			return err
+		}
+		ew.println()
 	}
 
 	if len(data.Outputs) > 0 {
-		fmt.Fprintf(w, "Outputs (%d)\n", len(data.Outputs))
+		ew.printf("Outputs (%d)\n", len(data.Outputs))
 		tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-		fmt.Fprintf(tw, "KEY\tVALUE\tEXPORT NAME\n")
+		ew2 := &errWriter{w: tw}
+		ew2.printf("KEY\tVALUE\tEXPORT NAME\n")
 		for _, o := range data.Outputs {
-			fmt.Fprintf(tw, "%s\t%s\t%s\n", o.Key, o.Value, o.ExportName)
+			ew2.printf("%s\t%s\t%s\n", o.Key, o.Value, o.ExportName)
 		}
-		tw.Flush()
-		fmt.Fprintln(w)
+		if ew2.err != nil {
+			return ew2.err
+		}
+		if err := tw.Flush(); err != nil {
+			return err
+		}
+		ew.println()
 	}
 
 	if len(data.Exports) > 0 {
-		fmt.Fprintf(w, "Exports (%d)\n", len(data.Exports))
+		ew.printf("Exports (%d)\n", len(data.Exports))
 		tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-		fmt.Fprintf(tw, "NAME\tVALUE\n")
+		ew2 := &errWriter{w: tw}
+		ew2.printf("NAME\tVALUE\n")
 		for _, e := range data.Exports {
-			fmt.Fprintf(tw, "%s\t%s\n", e.Name, e.Value)
+			ew2.printf("%s\t%s\n", e.Name, e.Value)
 		}
-		tw.Flush()
+		if ew2.err != nil {
+			return ew2.err
+		}
+		if err := tw.Flush(); err != nil {
+			return err
+		}
 	}
 
-	return nil
+	return ew.err
 }
 
 func (f *TableFormatter) FormatList(w io.Writer, data *model.StackList) error {
-	fmt.Fprintf(w, "Stacks (%d)\n", len(data.Stacks))
+	ew := &errWriter{w: w}
+	ew.printf("Stacks (%d)\n", len(data.Stacks))
+
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(tw, "NAME\tSTATUS\tUPDATED\tDESCRIPTION\n")
+	ew2 := &errWriter{w: tw}
+	ew2.printf("NAME\tSTATUS\tUPDATED\tDESCRIPTION\n")
 	for _, s := range data.Stacks {
 		updated := s.UpdatedAt
 		if updated == "" {
@@ -63,7 +89,14 @@ func (f *TableFormatter) FormatList(w io.Writer, data *model.StackList) error {
 		if len(desc) > 60 {
 			desc = desc[:57] + "..."
 		}
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", s.StackName, s.Status, updated, desc)
+		ew2.printf("%s\t%s\t%s\t%s\n", s.StackName, s.Status, updated, desc)
 	}
-	return tw.Flush()
+	if ew2.err != nil {
+		return ew2.err
+	}
+	if err := tw.Flush(); err != nil {
+		return err
+	}
+
+	return ew.err
 }

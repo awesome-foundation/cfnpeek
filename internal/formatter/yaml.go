@@ -13,13 +13,17 @@ type YAMLFormatter struct{}
 func (f *YAMLFormatter) Format(w io.Writer, data *model.StackInfo) error {
 	enc := yaml.NewEncoder(w)
 	enc.SetIndent(2)
-	defer enc.Close()
-	return enc.Encode(data)
+	if err := enc.Encode(data); err != nil {
+		return err
+	}
+	return enc.Close()
 }
 
 func (f *YAMLFormatter) FormatList(w io.Writer, data *model.StackList) error {
 	enc := yaml.NewEncoder(w)
 	enc.SetIndent(2)
-	defer enc.Close()
-	return enc.Encode(data)
+	if err := enc.Encode(data); err != nil {
+		return err
+	}
+	return enc.Close()
 }

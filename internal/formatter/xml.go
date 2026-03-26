@@ -15,8 +15,10 @@ func (f *XMLFormatter) Format(w io.Writer, data *model.StackInfo) error {
 	}
 	enc := xml.NewEncoder(w)
 	enc.Indent("", "  ")
-	defer enc.Close()
-	return enc.Encode(data)
+	if err := enc.Encode(data); err != nil {
+		return err
+	}
+	return enc.Close()
 }
 
 func (f *XMLFormatter) FormatList(w io.Writer, data *model.StackList) error {
@@ -25,6 +27,8 @@ func (f *XMLFormatter) FormatList(w io.Writer, data *model.StackList) error {
 	}
 	enc := xml.NewEncoder(w)
 	enc.Indent("", "  ")
-	defer enc.Close()
-	return enc.Encode(data)
+	if err := enc.Encode(data); err != nil {
+		return err
+	}
+	return enc.Close()
 }

@@ -1,7 +1,6 @@
 package formatter
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/awesome-foundation/cfnpeek/internal/model"
@@ -10,62 +9,67 @@ import (
 type INIFormatter struct{}
 
 func (f *INIFormatter) Format(w io.Writer, data *model.StackInfo) error {
-	fmt.Fprintf(w, "[stack]\n")
-	fmt.Fprintf(w, "name = %s\n", data.StackName)
-	fmt.Fprintf(w, "id = %s\n", data.StackID)
-	fmt.Fprintf(w, "status = %s\n", data.Status)
+	ew := &errWriter{w: w}
+
+	ew.printf("[stack]\n")
+	ew.printf("name = %s\n", data.StackName)
+	ew.printf("id = %s\n", data.StackID)
+	ew.printf("status = %s\n", data.Status)
 
 	if len(data.Resources) > 0 {
-		fmt.Fprintf(w, "\n[resources]\n")
+		ew.printf("\n[resources]\n")
 		for i, r := range data.Resources {
-			fmt.Fprintf(w, "resource.%d.logical_id = %s\n", i, r.LogicalID)
-			fmt.Fprintf(w, "resource.%d.physical_id = %s\n", i, r.PhysicalID)
-			fmt.Fprintf(w, "resource.%d.type = %s\n", i, r.Type)
-			fmt.Fprintf(w, "resource.%d.status = %s\n", i, r.Status)
-			fmt.Fprintf(w, "resource.%d.last_updated = %s\n", i, r.LastUpdated)
+			ew.printf("resource.%d.logical_id = %s\n", i, r.LogicalID)
+			ew.printf("resource.%d.physical_id = %s\n", i, r.PhysicalID)
+			ew.printf("resource.%d.type = %s\n", i, r.Type)
+			ew.printf("resource.%d.status = %s\n", i, r.Status)
+			ew.printf("resource.%d.last_updated = %s\n", i, r.LastUpdated)
 		}
 	}
 
 	if len(data.Outputs) > 0 {
-		fmt.Fprintf(w, "\n[outputs]\n")
+		ew.printf("\n[outputs]\n")
 		for i, o := range data.Outputs {
-			fmt.Fprintf(w, "output.%d.key = %s\n", i, o.Key)
-			fmt.Fprintf(w, "output.%d.value = %s\n", i, o.Value)
+			ew.printf("output.%d.key = %s\n", i, o.Key)
+			ew.printf("output.%d.value = %s\n", i, o.Value)
 			if o.Description != "" {
-				fmt.Fprintf(w, "output.%d.description = %s\n", i, o.Description)
+				ew.printf("output.%d.description = %s\n", i, o.Description)
 			}
 			if o.ExportName != "" {
-				fmt.Fprintf(w, "output.%d.export_name = %s\n", i, o.ExportName)
+				ew.printf("output.%d.export_name = %s\n", i, o.ExportName)
 			}
 		}
 	}
 
 	if len(data.Exports) > 0 {
-		fmt.Fprintf(w, "\n[exports]\n")
+		ew.printf("\n[exports]\n")
 		for i, e := range data.Exports {
-			fmt.Fprintf(w, "export.%d.name = %s\n", i, e.Name)
-			fmt.Fprintf(w, "export.%d.value = %s\n", i, e.Value)
+			ew.printf("export.%d.name = %s\n", i, e.Name)
+			ew.printf("export.%d.value = %s\n", i, e.Value)
 		}
 	}
 
-	return nil
+	return ew.err
 }
 
 func (f *INIFormatter) FormatList(w io.Writer, data *model.StackList) error {
+	ew := &errWriter{w: w}
+
 	for i, s := range data.Stacks {
 		if i > 0 {
-			fmt.Fprintln(w)
+			ew.println()
 		}
-		fmt.Fprintf(w, "[stack.%d]\n", i)
-		fmt.Fprintf(w, "name = %s\n", s.StackName)
-		fmt.Fprintf(w, "status = %s\n", s.Status)
-		fmt.Fprintf(w, "created_at = %s\n", s.CreatedAt)
+		ew.printf("[stack.%d]\n", i)
+		ew.printf("name = %s\n", s.StackName)
+		ew.printf("status = %s\n", s.Status)
+		ew.printf("created_at = %s\n", s.CreatedAt)
 		if s.UpdatedAt != "" {
-			fmt.Fprintf(w, "updated_at = %s\n", s.UpdatedAt)
+			ew.printf("updated_at = %s\n", s.UpdatedAt)
 		}
 		if s.Description != "" {
-			fmt.Fprintf(w, "description = %s\n", s.Description)
+			ew.printf("description = %s\n", s.Description)
 		}
 	}
-	return nil
+
+	return ew.err
 }
