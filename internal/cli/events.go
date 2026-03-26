@@ -30,6 +30,9 @@ func runEvents(ctx context.Context, client *cfnaws.Client, cmd *cobra.Command, s
 	if err != nil {
 		return err
 	}
+	if ss, ok := fmtr.(formatter.ShortSetter); ok {
+		ss.SetShort(short)
+	}
 
 	ef, ok := fmtr.(formatter.EventFormatter)
 	if !ok {

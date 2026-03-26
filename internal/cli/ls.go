@@ -37,6 +37,9 @@ func newLsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if ss, ok := fmtr.(formatter.ShortSetter); ok {
+				ss.SetShort(short)
+			}
 
 			lf, ok := fmtr.(formatter.ListFormatter)
 			if !ok {

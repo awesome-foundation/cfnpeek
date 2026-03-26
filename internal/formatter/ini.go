@@ -6,7 +6,9 @@ import (
 	"github.com/awesome-foundation/cfnpeek/internal/model"
 )
 
-type INIFormatter struct{}
+type INIFormatter struct{ short bool }
+
+func (f *INIFormatter) SetShort(short bool) { f.short = short }
 
 func (f *INIFormatter) Format(w io.Writer, data *model.StackInfo) error {
 	ew := &errWriter{w: w}
@@ -18,10 +20,14 @@ func (f *INIFormatter) Format(w io.Writer, data *model.StackInfo) error {
 
 	for _, r := range data.Resources {
 		ew.printf("\n[resource.%s]\n", r.LogicalID)
-		ew.printf("physical_id = %s\n", r.PhysicalID)
+		if !f.short {
+			ew.printf("physical_id = %s\n", r.PhysicalID)
+		}
 		ew.printf("type = %s\n", r.Type)
 		ew.printf("status = %s\n", r.Status)
-		ew.printf("last_updated = %s\n", r.LastUpdated)
+		if !f.short {
+			ew.printf("last_updated = %s\n", r.LastUpdated)
+		}
 	}
 
 	if len(data.Outputs) > 0 {
@@ -42,7 +48,9 @@ func (f *INIFormatter) Format(w io.Writer, data *model.StackInfo) error {
 		ew.printf("\n[event.%d]\n", i)
 		ew.printf("timestamp = %s\n", e.Timestamp)
 		ew.printf("logical_id = %s\n", e.LogicalID)
-		ew.printf("type = %s\n", e.ResourceType)
+		if !f.short {
+			ew.printf("type = %s\n", e.ResourceType)
+		}
 		ew.printf("status = %s\n", e.Status)
 		if e.StatusReason != "" {
 			ew.printf("reason = %s\n", e.StatusReason)
@@ -61,11 +69,13 @@ func (f *INIFormatter) FormatList(w io.Writer, data *model.StackList) error {
 		}
 		ew.printf("[%s]\n", s.StackName)
 		ew.printf("status = %s\n", s.Status)
-		ew.printf("created_at = %s\n", s.CreatedAt)
+		if !f.short {
+			ew.printf("created_at = %s\n", s.CreatedAt)
+		}
 		if s.UpdatedAt != "" {
 			ew.printf("updated_at = %s\n", s.UpdatedAt)
 		}
-		if s.Description != "" {
+		if !f.short && s.Description != "" {
 			ew.printf("description = %s\n", s.Description)
 		}
 	}
@@ -85,11 +95,13 @@ func (f *INIFormatter) FormatEvents(w io.Writer, data *model.StackEvents) error 
 		ew.printf("timestamp = %s\n", e.Timestamp)
 		ew.printf("logical_id = %s\n", e.LogicalID)
 		ew.printf("status = %s\n", e.Status)
-		ew.printf("resource_type = %s\n", e.ResourceType)
+		if !f.short {
+			ew.printf("resource_type = %s\n", e.ResourceType)
+		}
 		if e.StatusReason != "" {
 			ew.printf("status_reason = %s\n", e.StatusReason)
 		}
-		if e.PhysicalID != "" {
+		if !f.short && e.PhysicalID != "" {
 			ew.printf("physical_id = %s\n", e.PhysicalID)
 		}
 	}
