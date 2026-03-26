@@ -128,41 +128,41 @@ Commands:
 				want["exports"] = true
 			}
 
+			// Events-only mode uses the standalone events formatter
+			if want["events"] && !want["resources"] && !want["outputs"] && !want["exports"] {
+				return runEvents(ctx, client, cmd, stackName)
+			}
+
+			// Fetch stack info (always needed if we get here)
+			info, err := client.FetchStackInfo(ctx, stackName, want["resources"], want["outputs"], want["exports"])
+			if err != nil {
+				return fmt.Errorf("%s", cfnaws.FormatError(err))
+			}
+
+			if typeFilter != "" {
+				info.Resources = filter.Resources(info.Resources, typeFilter)
+			}
+			if grepFilter != "" {
+				info.Outputs = filter.Outputs(info.Outputs, grepFilter)
+				info.Exports = filter.Exports(info.Exports, grepFilter)
+			}
+
+			// Fetch events and embed in StackInfo for unified output
+			if want["events"] {
+				events, err := client.FetchEvents(ctx, stackName, eventsLimit)
+				if err != nil {
+					return fmt.Errorf("%s", cfnaws.FormatError(err))
+				}
+				info.Events = events.Events
+			}
+
 			resolved := resolveFormat()
 			fmtr, err := formatter.Get(resolved)
 			if err != nil {
 				return err
 			}
 
-			// Fetch and display stack info sections
-			if want["resources"] || want["outputs"] || want["exports"] {
-				info, err := client.FetchStackInfo(ctx, stackName, want["resources"], want["outputs"], want["exports"])
-				if err != nil {
-					return fmt.Errorf("%s", cfnaws.FormatError(err))
-				}
-
-				if typeFilter != "" {
-					info.Resources = filter.Resources(info.Resources, typeFilter)
-				}
-				if grepFilter != "" {
-					info.Outputs = filter.Outputs(info.Outputs, grepFilter)
-					info.Exports = filter.Exports(info.Exports, grepFilter)
-				}
-
-				if err := fmtr.Format(os.Stdout, info); err != nil {
-					return err
-				}
-			}
-
-			// Fetch and display events
-			if want["events"] {
-				if want["resources"] || want["outputs"] || want["exports"] {
-					fmt.Fprintln(os.Stdout) //nolint:errcheck
-				}
-				return runEvents(ctx, client, cmd, stackName)
-			}
-
-			return nil
+			return fmtr.Format(os.Stdout, info)
 		},
 	}
 

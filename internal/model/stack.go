@@ -10,7 +10,8 @@ type StackInfo struct {
 	Status    string     `json:"status" yaml:"status" toml:"status" xml:"status"`
 	Resources []Resource `json:"resources,omitempty" yaml:"resources,omitempty" toml:"resources,omitempty" xml:"resources>resource,omitempty"`
 	Outputs   []Output   `json:"outputs,omitempty" yaml:"outputs,omitempty" toml:"outputs,omitempty" xml:"outputs>output,omitempty"`
-	Exports   []Export   `json:"exports,omitempty" yaml:"exports,omitempty" toml:"exports,omitempty" xml:"exports>export,omitempty"`
+	Exports   []Export     `json:"exports,omitempty" yaml:"exports,omitempty" toml:"exports,omitempty" xml:"exports>export,omitempty"`
+	Events    []StackEvent `json:"events,omitempty" yaml:"events,omitempty" toml:"events,omitempty" xml:"events>event,omitempty"`
 }
 
 type Resource struct {

@@ -38,6 +38,17 @@ func (f *INIFormatter) Format(w io.Writer, data *model.StackInfo) error {
 		}
 	}
 
+	for i, e := range data.Events {
+		ew.printf("\n[event.%d]\n", i)
+		ew.printf("timestamp = %s\n", e.Timestamp)
+		ew.printf("logical_id = %s\n", e.LogicalID)
+		ew.printf("type = %s\n", e.ResourceType)
+		ew.printf("status = %s\n", e.Status)
+		if e.StatusReason != "" {
+			ew.printf("reason = %s\n", e.StatusReason)
+		}
+	}
+
 	return ew.err
 }
 
