@@ -1,6 +1,6 @@
 # cfnpeek
 
-Read-only CLI for inspecting deployed AWS CloudFormation stacks. Lists resources, outputs, and exports in multiple formats.
+Read-only CLI for inspecting deployed AWS CloudFormation stacks. Lists resources, outputs, exports, and events in multiple formats.
 
 ## Install
 
