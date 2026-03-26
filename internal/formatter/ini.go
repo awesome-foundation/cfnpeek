@@ -61,3 +61,27 @@ func (f *INIFormatter) FormatList(w io.Writer, data *model.StackList) error {
 
 	return ew.err
 }
+
+func (f *INIFormatter) FormatEvents(w io.Writer, data *model.StackEvents) error {
+	ew := &errWriter{w: w}
+
+	ew.printf("[stack]\n")
+	ew.printf("name = %s\n", data.StackName)
+
+	for i, e := range data.Events {
+		ew.println()
+		ew.printf("[event.%d]\n", i)
+		ew.printf("timestamp = %s\n", e.Timestamp)
+		ew.printf("logical_id = %s\n", e.LogicalID)
+		ew.printf("status = %s\n", e.Status)
+		ew.printf("resource_type = %s\n", e.ResourceType)
+		if e.StatusReason != "" {
+			ew.printf("status_reason = %s\n", e.StatusReason)
+		}
+		if e.PhysicalID != "" {
+			ew.printf("physical_id = %s\n", e.PhysicalID)
+		}
+	}
+
+	return ew.err
+}

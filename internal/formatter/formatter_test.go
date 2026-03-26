@@ -11,6 +11,28 @@ import (
 	"github.com/awesome-foundation/cfnpeek/internal/model"
 )
 
+func testEventsData() *model.StackEvents {
+	return &model.StackEvents{
+		StackName: "test-stack",
+		Events: []model.StackEvent{
+			{
+				Timestamp:    "2026-01-15T10:30:00Z",
+				LogicalID:    "VPC",
+				Status:       "CREATE_COMPLETE",
+				ResourceType: "AWS::EC2::VPC",
+				PhysicalID:   "vpc-abc123",
+			},
+			{
+				Timestamp:    "2026-01-15T10:30:05Z",
+				LogicalID:    "Subnet",
+				Status:       "CREATE_FAILED",
+				StatusReason: "Resource limit exceeded",
+				ResourceType: "AWS::EC2::Subnet",
+			},
+		},
+	}
+}
+
 func testData() *model.StackInfo {
 	return &model.StackInfo{
 		StackName: "test-stack",
@@ -181,6 +203,102 @@ func TestEmptySections(t *testing.T) {
 		f, _ := formatter.Get(name)
 		if err := f.Format(&buf, data); err != nil {
 			t.Errorf("%s formatter failed on empty data: %v", name, err)
+		}
+	}
+}
+
+func TestFormatEventsAllFormats(t *testing.T) {
+	data := testEventsData()
+
+	for _, name := range []string{"json", "yaml", "toml", "xml", "ini", "csv", "table"} {
+		t.Run(name, func(t *testing.T) {
+			var buf bytes.Buffer
+			f, err := formatter.Get(name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ef, ok := f.(formatter.EventFormatter)
+			if !ok {
+				t.Fatalf("%s does not implement EventFormatter", name)
+			}
+			if err := ef.FormatEvents(&buf, data); err != nil {
+				t.Fatalf("%s FormatEvents failed: %v", name, err)
+			}
+			out := buf.String()
+			if !strings.Contains(out, "VPC") {
+				t.Errorf("%s output missing logical ID 'VPC'", name)
+			}
+			if !strings.Contains(out, "Subnet") {
+				t.Errorf("%s output missing logical ID 'Subnet'", name)
+			}
+		})
+	}
+}
+
+func TestFormatEventsJSONRoundtrip(t *testing.T) {
+	data := testEventsData()
+	var buf bytes.Buffer
+	f, _ := formatter.Get("json")
+	ef := f.(formatter.EventFormatter)
+	if err := ef.FormatEvents(&buf, data); err != nil {
+		t.Fatal(err)
+	}
+
+	var decoded model.StackEvents
+	if err := json.Unmarshal(buf.Bytes(), &decoded); err != nil {
+		t.Fatalf("JSON events output is not valid: %v\nOutput:\n%s", err, buf.String())
+	}
+	if decoded.StackName != "test-stack" {
+		t.Errorf("expected stack name 'test-stack', got %q", decoded.StackName)
+	}
+	if len(decoded.Events) != 2 {
+		t.Errorf("expected 2 events, got %d", len(decoded.Events))
+	}
+}
+
+func TestFormatEventsXMLValid(t *testing.T) {
+	data := testEventsData()
+	var buf bytes.Buffer
+	f, _ := formatter.Get("xml")
+	ef := f.(formatter.EventFormatter)
+	if err := ef.FormatEvents(&buf, data); err != nil {
+		t.Fatal(err)
+	}
+
+	var decoded model.StackEvents
+	if err := xml.Unmarshal(buf.Bytes(), &decoded); err != nil {
+		t.Fatalf("XML events output is not valid: %v\nOutput:\n%s", err, buf.String())
+	}
+}
+
+func TestFormatEventsTableContainsHeaders(t *testing.T) {
+	data := testEventsData()
+	var buf bytes.Buffer
+	f, _ := formatter.Get("table")
+	ef := f.(formatter.EventFormatter)
+	if err := ef.FormatEvents(&buf, data); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	for _, want := range []string{"TIMESTAMP", "LOGICAL ID", "STATUS", "REASON", "Resource limit exceeded"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("table events output missing %q", want)
+		}
+	}
+}
+
+func TestFormatEventsCSVContainsHeaders(t *testing.T) {
+	data := testEventsData()
+	var buf bytes.Buffer
+	f, _ := formatter.Get("csv")
+	ef := f.(formatter.EventFormatter)
+	if err := ef.FormatEvents(&buf, data); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	for _, want := range []string{"timestamp", "logical_id", "status", "status_reason", "resource_type"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("CSV events output missing header %q", want)
 		}
 	}
 }

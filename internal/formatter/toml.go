@@ -68,3 +68,27 @@ func (f *TOMLFormatter) FormatList(w io.Writer, data *model.StackList) error {
 	}
 	return toml.NewEncoder(w).Encode(doc)
 }
+
+func (f *TOMLFormatter) FormatEvents(w io.Writer, data *model.StackEvents) error {
+	events := make([]map[string]any, 0, len(data.Events))
+	for _, e := range data.Events {
+		entry := map[string]any{
+			"timestamp":     e.Timestamp,
+			"logical_id":    e.LogicalID,
+			"status":        e.Status,
+			"resource_type": e.ResourceType,
+		}
+		if e.StatusReason != "" {
+			entry["status_reason"] = e.StatusReason
+		}
+		if e.PhysicalID != "" {
+			entry["physical_id"] = e.PhysicalID
+		}
+		events = append(events, entry)
+	}
+	doc := map[string]any{
+		"stack_name": data.StackName,
+		"events":     events,
+	}
+	return toml.NewEncoder(w).Encode(doc)
+}

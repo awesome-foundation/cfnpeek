@@ -17,6 +17,7 @@ import (
 // CloudFormationAPI abstracts the CloudFormation API calls for testability.
 type CloudFormationAPI interface {
 	DescribeStacks(ctx context.Context, params *cloudformation.DescribeStacksInput, optFns ...func(*cloudformation.Options)) (*cloudformation.DescribeStacksOutput, error)
+	DescribeStackEvents(ctx context.Context, params *cloudformation.DescribeStackEventsInput, optFns ...func(*cloudformation.Options)) (*cloudformation.DescribeStackEventsOutput, error)
 	ListStacks(ctx context.Context, params *cloudformation.ListStacksInput, optFns ...func(*cloudformation.Options)) (*cloudformation.ListStacksOutput, error)
 	ListStackResources(ctx context.Context, params *cloudformation.ListStackResourcesInput, optFns ...func(*cloudformation.Options)) (*cloudformation.ListStackResourcesOutput, error)
 	ListExports(ctx context.Context, params *cloudformation.ListExportsInput, optFns ...func(*cloudformation.Options)) (*cloudformation.ListExportsOutput, error)
@@ -216,6 +217,59 @@ func (c *Client) FetchExports(ctx context.Context, stackID string) ([]model.Expo
 	}
 
 	return exports, nil
+}
+
+// FetchEvents returns stack events sorted ascending by timestamp (oldest first).
+// AWS returns events newest-first, so we reverse after collecting all pages.
+// If limit > 0, only the last N events (by time) are returned.
+func (c *Client) FetchEvents(ctx context.Context, stackName string, limit int) (*model.StackEvents, error) {
+	var events []model.StackEvent
+	var nextToken *string
+
+	for {
+		out, err := c.api.DescribeStackEvents(ctx, &cloudformation.DescribeStackEventsInput{
+			StackName: aws.String(stackName),
+			NextToken: nextToken,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("describing stack events: %w", err)
+		}
+
+		for _, e := range out.StackEvents {
+			ts := ""
+			if e.Timestamp != nil {
+				ts = e.Timestamp.Format("2006-01-02T15:04:05Z")
+			}
+			events = append(events, model.StackEvent{
+				Timestamp:    ts,
+				LogicalID:    aws.ToString(e.LogicalResourceId),
+				Status:       string(e.ResourceStatus),
+				StatusReason: aws.ToString(e.ResourceStatusReason),
+				ResourceType: aws.ToString(e.ResourceType),
+				PhysicalID:   aws.ToString(e.PhysicalResourceId),
+			})
+		}
+
+		if out.NextToken == nil {
+			break
+		}
+		nextToken = out.NextToken
+	}
+
+	// AWS returns newest-first; reverse to get oldest-first.
+	for i, j := 0, len(events)-1; i < j; i, j = i+1, j-1 {
+		events[i], events[j] = events[j], events[i]
+	}
+
+	// Apply limit: keep the last N events (already sorted ascending, so tail).
+	if limit > 0 && len(events) > limit {
+		events = events[len(events)-limit:]
+	}
+
+	return &model.StackEvents{
+		StackName: stackName,
+		Events:    events,
+	}, nil
 }
 
 // FetchStackInfo fetches all requested sections for a stack.

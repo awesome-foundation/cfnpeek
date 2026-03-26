@@ -32,3 +32,15 @@ func (f *XMLFormatter) FormatList(w io.Writer, data *model.StackList) error {
 	}
 	return enc.Close()
 }
+
+func (f *XMLFormatter) FormatEvents(w io.Writer, data *model.StackEvents) error {
+	if _, err := io.WriteString(w, xml.Header); err != nil {
+		return err
+	}
+	enc := xml.NewEncoder(w)
+	enc.Indent("", "  ")
+	if err := enc.Encode(data); err != nil {
+		return err
+	}
+	return enc.Close()
+}

@@ -27,3 +27,12 @@ func (f *YAMLFormatter) FormatList(w io.Writer, data *model.StackList) error {
 	}
 	return enc.Close()
 }
+
+func (f *YAMLFormatter) FormatEvents(w io.Writer, data *model.StackEvents) error {
+	enc := yaml.NewEncoder(w)
+	enc.SetIndent(2)
+	if err := enc.Encode(data); err != nil {
+		return err
+	}
+	return enc.Close()
+}
