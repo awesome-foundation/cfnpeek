@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/awesome-foundation/cfnpeek/compare/v0.5.0...v0.6.0) (2026-03-27)
+
+
+### Features
+
+* add cfntop — live TUI monitor for CloudFormation stacks ([#20](https://github.com/awesome-foundation/cfnpeek/issues/20)) ([4adfaff](https://github.com/awesome-foundation/cfnpeek/commit/4adfaff2b27c7ffa809d1236833d50f5031ab515))
+
 ## [0.5.0](https://github.com/awesome-foundation/cfnpeek/compare/v0.4.0...v0.5.0) (2026-03-26)
 
 
