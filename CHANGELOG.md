@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/awesome-foundation/cfnpeek/compare/v0.6.0...v0.7.0) (2026-03-27)
+
+
+### Features
+
+* Homebrew formula ([#23](https://github.com/awesome-foundation/cfnpeek/issues/23)) ([f647aa4](https://github.com/awesome-foundation/cfnpeek/commit/f647aa43b5dc16ef05730e73b8c29555ceaf1519))
+
 ## [0.6.0](https://github.com/awesome-foundation/cfnpeek/compare/v0.5.0...v0.6.0) (2026-03-27)
 
 
