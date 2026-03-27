@@ -36,6 +36,20 @@ checksum:
 changelog:
   disable: true
 
+brews:
+  - repository:
+      owner: awesome-foundation
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: https://github.com/awesome-foundation/cfnpeek
+    description: Read-only CLI for inspecting AWS CloudFormation stack resources, outputs, exports, and events
+    license: MIT
+    install: |
+      bin.install "cfnpeek"
+    test: |
+      system bin/"cfnpeek", "--version"
+
 release:
   github:
     owner: awesome-foundation

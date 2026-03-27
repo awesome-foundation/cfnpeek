@@ -4,7 +4,12 @@ Read-only CLI for inspecting deployed AWS CloudFormation stacks. Lists resources
 
 ## Install
 
-Download the latest binary from [Releases](https://github.com/awesome-foundation/cfnpeek/releases), or copy-paste one of these:
+**Homebrew**
+```bash
+brew install awesome-foundation/tap/cfnpeek
+```
+
+Or download a binary from [Releases](https://github.com/awesome-foundation/cfnpeek/releases):
 
 **macOS (Apple Silicon)**
 ```bash
