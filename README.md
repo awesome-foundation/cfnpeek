@@ -90,6 +90,26 @@ cfnpeek uses the standard AWS SDK credential chain:
 
 Use `--profile` / `-p` to select a named profile, `--region` / `-r` to override the region.
 
+## cfntop — Live TUI Monitor
+
+This repo also includes **cfntop**, a terminal UI for continuously monitoring CloudFormation stacks.
+
+```bash
+cfntop                    # monitor all stacks in default region
+cfntop -r eu-west-1       # specific region
+cfntop -n 10              # poll every 10 seconds (default: 5)
+cfntop --absolute-time    # show timestamps instead of "2m ago"
+```
+
+**Features:**
+- Stacks sorted by last update, active deployments pinned to top
+- Auto-expands active stacks and recently deployed stacks
+- Color-coded statuses: green (complete), yellow (in progress), red (failed/rollback)
+- ECS service details: deployments with task counts, failed task reasons
+- Recently deleted resources shown with `×` marker
+- Untouched resources greyed out during/after deploys
+- Keyboard: arrows to navigate, enter to expand/collapse, `r` to refresh, `q` to quit
+
 ## GitHub Action
 
 ```yaml
