@@ -6,8 +6,7 @@ before:
     - go vet ./...
 
 builds:
-  - id: cfnpeek
-    main: ./cmd/cfnpeek
+  - main: ./cmd/cfnpeek
     binary: cfnpeek
     env:
       - CGO_ENABLED=0
@@ -24,37 +23,9 @@ builds:
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
 
-  - id: cfntop
-    main: ./cmd/cfntop
-    binary: cfntop
-    env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
-      - darwin
-      - windows
-    goarch:
-      - amd64
-      - arm64
-    ldflags:
-      - -s -w
-      - -X main.version={{.Version}}
-      - -X main.commit={{.Commit}}
-      - -X main.date={{.Date}}
-
 archives:
-  - id: cfnpeek
-    builds: [cfnpeek]
-    format: tar.gz
+  - format: tar.gz
     name_template: "cfnpeek_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    format_overrides:
-      - goos: windows
-        format: zip
-
-  - id: cfntop
-    builds: [cfntop]
-    format: tar.gz
-    name_template: "cfntop_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip
